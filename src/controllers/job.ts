@@ -4,6 +4,7 @@ import { Prisma, PrismaClient } from "@prisma/client";
 import { isKeyObject } from "util/types";
 
 const jobClient = new PrismaClient().job;
+const appliedJobsClient = new PrismaClient().appliedJobs;
 
 interface JobType {
     id?: string;
@@ -84,12 +85,12 @@ export class Job {
 
     //CREATING JOB
     postJob: RequestHandler = async (req, res) => {
-        
+
         try {
             const jobData = req.body;
-            
+
             jobData['companyId'] = req.companyId;
-            
+
             if (jobData.id) {
                 delete jobData.id;
             }
@@ -100,7 +101,7 @@ export class Job {
 
             res.status(201).json({ job })
         } catch (error) {
-            
+
             res.status(500)
                 .json({
                     status: 'Server Error.',
@@ -180,6 +181,35 @@ export class Job {
                     })
             }
 
+        }
+    }
+    //GET SINGLE JOB BY ID
+    postApplyJob: RequestHandler = async (req, res) => {
+        try {
+            const userId = req.userId;
+            const jobId = req.params.id;
+
+            if (!userId || !jobId) {
+                return res.status(400).json({ message: "Provide all required inputs" })
+            }
+            const applyJob = await appliedJobsClient.create({
+                data: {
+                    userId: userId,
+                    jobId: jobId
+                }
+            })
+            res.status(201).json({ applyJob })
+        } catch (error) {
+            if ((error as Error).name === 'PrismaClientKnownRequestError') {
+                return res.status(404).json({message: 'Make sure the job exist.'});
+            }
+            else {
+                return res.status(500)
+                .json({
+                    status: 'Server Error.',
+                    error: error
+                })
+            }
         }
     }
 }

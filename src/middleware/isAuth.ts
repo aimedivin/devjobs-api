@@ -95,6 +95,7 @@ export const isUserAuth: RequestHandler = async (req, res, next) => {
         if (!decodedToken) {
             return res.status(401).json({ message: "You're no authorized" })
         }
+        req.userId = decodedToken.userId;
 
         const user = await userClient.findUnique({
             where: {

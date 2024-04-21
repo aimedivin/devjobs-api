@@ -5,6 +5,7 @@ import jwt, { JsonWebTokenError } from "jsonwebtoken";
 
 const userClient = new PrismaClient().user;
 const companyClient = new PrismaClient().company;
+
 interface AccountType {
     id?: string;
     name?: string;
@@ -34,9 +35,39 @@ export class Account {
                         name: true,
                         occupation: true,
                         email: true,
-                        AppliedJobs: true
+                        AppliedJobs: {
+                            select: {
+                                job: {
+                                    select: {
+                                        id: true,
+                                        position: true,
+                                        location: true,
+                                        postedAt: true,
+                                        contract: true,
+                                        apply: true,
+                                        description: true,
+                                        requirements: true,
+                                        role: true,
+                                        AppliedJobs: true,
+                                        company: {
+                                            select: {
+                                                name: true,
+                                                logo: true,
+                                                logoBackground: true,
+                                                website: true
+                                            }
+                                        },
+                                    }
+                                }
+                            }
+                        }
                     }
                 });
+                
+                account = {
+                    ...account,
+                    ['AppliedJobs']: account?.AppliedJobs.map(job => job.job)
+                };
             }
             else if (accountCompanyId) {
 
@@ -62,7 +93,14 @@ export class Account {
                                 description: true,
                                 requirements: true,
                                 role: true,
-                                company: true
+                                company: {
+                                    select: {
+                                        name: true,
+                                        logo: true,
+                                        logoBackground: true,
+                                        website: true
+                                    }
+                                },
                             }
                         },
                     }

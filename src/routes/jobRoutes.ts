@@ -23,4 +23,7 @@ router.put('/:id', jobControllers.putJob);
 // DELEING JOB
 router.delete('/:id', jobControllers.deleteJob);
 
+// APPLYING A JOB
+router.post('/apply/:id', isUserAuth, jobControllers.postApplyJob);
+
 export default router;
