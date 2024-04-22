@@ -111,7 +111,6 @@ export const isUserAuth: RequestHandler = async (req, res, next) => {
         next()
     }
     catch (err) {
-
         if ((err as Error).name === 'JsonWebTokenError' || (err as Error).name === 'TokenExpiredError') {
             res.status(401).json({ message: 'You\'re not authorized' });
         } else {
