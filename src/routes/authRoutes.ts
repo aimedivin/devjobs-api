@@ -19,4 +19,7 @@ router.post('/company', companyControllers.postCompany);
 // LOGIN COMPANY
 router.post('/company/login', companyControllers.postLoginCompany);
 
+// REFRESH TOKEN
+router.get('/token', companyControllers.accessToken);
+
 export default router;

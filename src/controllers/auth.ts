@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import bcrypt from 'bcryptjs';
 import { Prisma, PrismaClient } from "@prisma/client";
-import jwt, { JsonWebTokenError } from "jsonwebtoken";
+import jwt, { JsonWebTokenError, JwtPayload } from "jsonwebtoken";
 
 const userClient = new PrismaClient().user;
 const companyClient = new PrismaClient().company;
@@ -53,7 +53,7 @@ export class User {
     postLoginUser: RequestHandler = async (req, res) => {
         try {
             const { email, password } = req.body;
-            
+
 
             const user = await userClient.findUnique({
                 where: {
@@ -120,7 +120,7 @@ export class Company {
             }
 
             companyData.password = await bcrypt.hash(companyData.password, 12);
-            companyData.logo= logo;
+            companyData.logo = logo;
 
             const company = await companyClient.create({
                 data: companyData,
@@ -199,6 +199,87 @@ export class Company {
                     })
             } else {
                 res.status(500)
+                    .json({
+                        status: 'Server Error.',
+                        error: error
+                    })
+            }
+        }
+    }
+
+    accessToken: RequestHandler = async (req, res) => {
+        try {
+            const refreshToken = req.body.token;
+
+            const decodedToken = jwt.verify(refreshToken, `${process.env.JWT_REFRESH_SECRET}`) as JwtPayload;
+
+            let account;
+
+            if (decodedToken.companyId) {
+                account = await companyClient.findUnique({
+                    where: {
+                        id: decodedToken.companyId
+                    }
+                });
+
+                if (account) {
+                    return res
+                        .status(200)
+                        .json({
+                            token: jwt.sign(
+                                {
+                                    companyId: account.id,
+                                    email: account.email,
+                                },
+                                `${process.env.JWT_SECRET}`,
+                                { expiresIn: '10s' }
+                            )
+                        })
+                }
+            }
+            else if (decodedToken.userId) {
+                
+                account = await userClient.findUnique({
+                    where: {
+                        id: decodedToken.userId
+                    }
+                })
+                if (account) {
+                    return res
+                        .status(200)
+                        .json({
+                            token: jwt.sign(
+                                {
+                                    userId: account.id,
+                                    email: account.email,
+                                },
+                                `${process.env.JWT_SECRET}`,
+                                { expiresIn: '10s' }
+                            )
+                        })
+                }
+            }
+
+            throw new Error("Make sure the submitted token is valid");
+
+        } catch (error) {
+
+            if ((error as Error).name === 'PrismaClientKnownRequestError') {
+                return res.status(404).json({ message: 'Make sure the submitted token is valid' });
+            }
+            else if ((error as Error).name === 'PrismaClientValidationError') {
+                res.status(422)
+                    .json({
+                        message: 'Validation Error'
+                    })
+            } else if ((error as Error).name === 'JsonWebTokenError') {
+                res.status(401)
+                    .json({
+                        message: 'invalid token'
+                    })
+            }
+            else {
+                return res.status(500)
                     .json({
                         status: 'Server Error.',
                         error: error
