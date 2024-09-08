@@ -13,6 +13,8 @@ import path from "path";
 
 const app = express();
 
+const prisma = new PrismaClient();
+
 const fileStorage = multer.diskStorage({
     destination: (req, file, callback) => {
         callback(null, 'images/');
@@ -58,7 +60,16 @@ app.use('/api/auth', upload.single('logo'), authRoutes)
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-    console.log(`Server started on the port: ${PORT}`);
+const connectToDatabase = async () => {
+    try {
+        await prisma.$connect();
+        console.log('Connected to the database successfully');
+    } catch (error) {
+        console.error('Failed to connect to the database', error);
+    }
+}
 
+app.listen(PORT, async() => {
+    await connectToDatabase();
+    console.log(`Server started on the port: ${PORT}`);
 })
