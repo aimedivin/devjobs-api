@@ -112,15 +112,8 @@ export class Company {
                 delete companyData.id;
             }
 
-            let logo;
-            if (req.file && req.file.path) {
-                logo = req.file.path;
-            } else {
-                return res.status(415).json({ message: 'Unsupported Media Type.' });
-            }
-
             companyData.password = await bcrypt.hash(companyData.password, 12);
-            companyData.logo = logo;
+            companyData.logo = companyData.name.slice(0,5);
 
             const company = await companyClient.create({
                 data: companyData,
@@ -135,6 +128,9 @@ export class Company {
 
             res.status(200).json({ company })
         } catch (error) {
+            console.log('====================================');
+            console.log(error);
+            console.log('====================================');
             if ((error as Error).name === 'PrismaClientKnownRequestError') {
                 res.status(409)
                     .json({
